@@ -1,0 +1,128 @@
+@font-face {
+    font-family: "Futura Condensed";
+    src: url("Futura_Condenced-Normal.woff") format("truetype");
+}
+
+
+html, body {
+    margin: 0;
+    font-family: "Futura Condensed";
+    background-color: hsl(300, 100%, 5%);
+    text-align: center;
+}
+
+.game {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.screenLightBottom {
+    position: absolute;
+    bottom: 0;
+    width: 100vw;
+    height: 5vh;
+    background: linear-gradient(to top, hsla(120, 100%, 50%, 0.4), transparent);
+}
+
+
+.questionsTable {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    .categoryRow {
+        display: flex;
+        flex-direction: row;
+        box-sizing: border-box;
+        border-bottom: 1px solid hsl(0, 100%, 80%);
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        .category {
+            display: flex;
+            text-align: center;
+            color: white;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .priceButton {
+            display: flex;
+            text-align: center;
+            color: wheat;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            cursor: pointer;
+            border-left: 1px solid hsl(0, 100%, 80%);
+            border-right: 1px solid transparent;
+            border-bottom: 1px solid transparent;
+            border-top: 1px solid transparent;
+    
+            &:hover {
+                border-left: 1px solid yellow;
+                border-right: 1px solid yellow;
+                border-bottom: 1px solid yellow;
+                border-top: 1px solid yellow;
+            }
+        }
+    }
+}
+
+.questionBlock {
+    display: flex;
+    width: 40vw;
+    height: 20vw;
+    color: white;
+    padding: 3vw;
+
+    align-items: center;
+    justify-content: center;
+}
+
+
+
+
+.players-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    width: 100vw;
+
+    padding-top: 30px;
+}
+
+.player {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 7vw;
+    margin: 20px;
+    justify-content: center;
+    color: white;
+
+    .avatar {
+        width: 6vw;
+        height: 6vw;
+
+        img {
+            object-fit: contain;
+        }
+    }
+
+    .points {
+        width: 100%;
+        text-align: center;
+        font-size: 80%;
+    }
+
+    .name {
+        width: 100%;
+        text-align: center;
+        font-size: 60%;
+    }
+}

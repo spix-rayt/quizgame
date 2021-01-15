@@ -1,0 +1,38 @@
+{
+  "name": "quizgame",
+  "version": "1.0.0",
+  "description": "Quiz game",
+  "scripts": {
+    "build": "webpack --config webpack.config.js"
+  },
+  "author": "spixpriest@gmail.com",
+  "license": "ISC",
+  "dependencies": {
+    "@types/ws": "^7.4.0",
+    "express": "^4.17.1",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "ws": "^7.4.2"
+  },
+  "devDependencies": {
+    "@reduxjs/toolkit": "^1.5.0",
+    "@types/express": "^4.17.9",
+    "@types/node": "^14.14.20",
+    "@types/react": "^16.8.24",
+    "@types/react-dom": "^16.0.5",
+    "@types/webpack": "4.1.4",
+    "css-loader": "^5.0.1",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^4.5.1",
+    "sass": "^1.32.2",
+    "sass-loader": "^10.1.0",
+    "style-loader": "^2.0.0",
+    "ts-loader": "^6.2.1",
+    "ts-node": "^9.1.1",
+    "ttf-loader": "^1.0.2",
+    "typescript": "^3.4.3",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10",
+    "webpack-node-externals": "^2.5.2"
+  }
+}

@@ -1,0 +1,28 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.4.21'
+}
+
+group = 'io.spixy'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = '1.8'
+}
+
+ext.ktor_version = '1.4.2'
+
+dependencies {
+    implementation "org.jetbrains.exposed:exposed-jdbc:0.28.1"
+    implementation "org.xerial:sqlite-jdbc:3.32.3.2"
+
+    implementation "io.ktor:ktor-server-core:$ktor_version"
+    implementation "io.ktor:ktor-server-netty:$ktor_version"
+    implementation "io.ktor:ktor-websockets:$ktor_version"
+
+    implementation "ch.qos.logback:logback-classic:1.2.3"
+}
