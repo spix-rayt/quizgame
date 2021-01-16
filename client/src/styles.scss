@@ -18,6 +18,22 @@ html, body {
     justify-content: center;
 }
 
+.screenLightLeft {
+    position: absolute;
+    left: 0;
+    width: 2vw;
+    height: 100vh;
+    background: linear-gradient(to right, hsla(120, 100%, 50%, 0.4), transparent);
+}
+
+.screenLightRight {
+    position: absolute;
+    right: 0;
+    width: 2vw;
+    height: 100vh;
+    background: linear-gradient(to left, hsla(120, 100%, 50%, 0.4), transparent);
+}
+
 .screenLightBottom {
     position: absolute;
     bottom: 0;
@@ -73,6 +89,18 @@ html, body {
     }
 }
 
+.splashScreen {
+    display: flex;
+    width: 40vw;
+    height: 20vw;
+    color: white;
+    padding: 3vw;
+    font-size: 4vw;
+
+    align-items: center;
+    justify-content: center;
+}
+
 .questionBlock {
     display: flex;
     width: 40vw;
@@ -84,10 +112,9 @@ html, body {
     justify-content: center;
 }
 
-
-
-
 .players-container {
+    position: absolute;
+    bottom: 0;
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -117,12 +144,12 @@ html, body {
     .points {
         width: 100%;
         text-align: center;
-        font-size: 80%;
+        font-size: 1vw;
     }
 
     .name {
         width: 100%;
         text-align: center;
-        font-size: 60%;
+        font-size: 1vw;
     }
 }

@@ -15,7 +15,8 @@ interface ICategory {
 }
 
 let state = {
-    gamePhase: "question",
+    gamePhase: "splashscreen",
+    localPlayerShouldAnswer: false,
     categories: [
         {
             name: "Category 1",
@@ -44,15 +45,15 @@ let state = {
     ],
     players: [
         {
-            avatar: "smorc.webp",
+            avatar: "jett-avatar.jpg",
             name: "Player 1",
-            points: 1000,
+            points: 24500,
             online: true
         },
         {
-            avatar: "smorc.webp",
+            avatar: "jett-avatar.jpg",
             name: "Player 2",
-            points: 1500,
+            points: 31900,
             online: true
         },
         {
@@ -80,6 +81,9 @@ function App() {
 
 function Game() {
     let q;
+    if(state.gamePhase == "splashscreen") {
+        q = <SplashScreen></SplashScreen>
+    }
     if(state.gamePhase == "table") {
         q = <QuestionsTable></QuestionsTable>
     }
@@ -96,7 +100,14 @@ function Game() {
                 })
             }
         </div>
-        <div className="screenLightBottom"></div>
+        { state.localPlayerShouldAnswer ? <div className="screenLightLeft"></div> : null}
+        { state.localPlayerShouldAnswer ? <div className="screenLightRight"></div> : null}    
+    </div>
+}
+
+function SplashScreen() {
+    return <div className="splashScreen">
+        Ожидание начала игры
     </div>
 }
 
@@ -172,22 +183,16 @@ function Player(prop: {data: IPlayer}) {
 let render = () => ReactDOM.render(<App />, document.querySelector('#root'));
 render();
 
-// setInterval(() => {
-//     if(state.gamePhase == "table") {
-//         state.gamePhase = "question";
-//     } else if(state.gamePhase == "question") {
-//         state.gamePhase = "table";
-//     }
-//     render();
-// }, 1000);
 
-// let socket = new WebSocket("ws://localhost:8080/");
 
-// socket.onopen = (e) => {
-//     console.log("connected");
-//     socket.send("test message")
-// }
 
-// socket.onmessage = (e) => {
-//     let json = JSON.parse(e.data);
-// }
+
+let socket = new WebSocket("ws://localhost:8080/");
+
+socket.onopen = (e) => {
+    console.log("connected");
+}
+
+socket.onmessage = (e) => {
+    let message = JSON.parse(e.data);
+}
