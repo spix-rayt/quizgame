@@ -1,69 +1,7 @@
 import './styles.scss';
-import React from 'react';
+import React, { ChangeEvent, SyntheticEvent, useState } from 'react';
 import ReactDOM from 'react-dom';
-
-interface IPlayer {
-    avatar: string,
-    name: string,
-    points: number,
-    online: boolean
-}
-
-interface ICategory {
-    name: string,
-    questions: Array<number>
-}
-
-let state = {
-    gamePhase: "splashscreen",
-    localPlayerShouldAnswer: false,
-    categories: [
-        {
-            name: "Category 1",
-            questions: [100, 200, 300, 400, 500]
-        },
-        {
-            name: "Category 2",
-            questions: [100, 200, 300, 400, 500]
-        },
-        {
-            name: "Category 3",
-            questions: [100, 200, 300, 400, 500]
-        },
-        {
-            name: "Category 4",
-            questions: [100, 200, 300, 400, 500]
-        },
-        {
-            name: "Category 5",
-            questions: [100, 200, 300, 400, 500]
-        },
-        {
-            name: "Category 6",
-            questions: [100, 200, 300, 400, 500]
-        }
-    ],
-    players: [
-        {
-            avatar: "jett-avatar.jpg",
-            name: "Player 1",
-            points: 24500,
-            online: true
-        },
-        {
-            avatar: "jett-avatar.jpg",
-            name: "Player 2",
-            points: 31900,
-            online: true
-        },
-        {
-            avatar: "smorc.webp",
-            name: "Player 3",
-            points: -300,
-            online: true
-        }
-    ]
-}
+import { ICategory, IPlayer, sendToServer, state, tryAuth } from './logic';
 
 let questionsTableWidth = 40;
 
@@ -76,23 +14,59 @@ function getTextWidth(text: string, font: string) {
 }
 
 function App() {
-    return <Game></Game>
+    if(state.connecting) {
+        return <div></div>
+    } else {
+        if(state.authorized) {
+            return <Game></Game>
+        } else {
+            return <Auth></Auth>
+        }
+    }
+}
+
+function Auth() {
+    const [playerName, setPlayerName] = useState(state.playerName);
+    const [key, setKey] = useState("");
+    
+    let handleNameChange = (e: ChangeEvent<HTMLInputElement>) => setPlayerName(e.target.value);
+
+    let handleKeyChange = (e: ChangeEvent<HTMLInputElement>) => setKey(e.target.value);
+    
+    let handleButtonClick = (e: SyntheticEvent) => {
+        localStorage.setItem("playerName", playerName);
+        localStorage.setItem("key", key);
+        tryAuth();
+    }
+
+    return <div className="auth">
+        <div>
+            <span>Имя</span><input type="text" onChange={handleNameChange} value={playerName}></input>
+        </div>
+        <div>
+            <span>Код</span><input type="password" onChange={handleKeyChange}></input>
+        </div>
+        <button onClick={handleButtonClick}>Вход</button>
+    </div>
 }
 
 function Game() {
-    let q;
-    if(state.gamePhase == "splashscreen") {
-        q = <SplashScreen></SplashScreen>
+    let gamePhaseComponent;
+    if(state.gamePhase == "SPLASHSCREEN") {
+        gamePhaseComponent = <SplashScreen></SplashScreen>
     }
-    if(state.gamePhase == "table") {
-        q = <QuestionsTable></QuestionsTable>
+    if(state.gamePhase == "QUESTIONSTABLE") {
+        gamePhaseComponent = <QuestionsTable></QuestionsTable>
     }
-    if(state.gamePhase == "question") {
-        q = <QuestionBlock></QuestionBlock>
+    if(state.gamePhase == "QUESTION") {
+        gamePhaseComponent = <QuestionBlock></QuestionBlock>
+    }
+    if(state.gamePhase == "ENDGAME") {
+        gamePhaseComponent = <div></div>
     }
 
     return <div className="game">
-        {q}
+        {gamePhaseComponent}
         <div className="players-container">
             {
                 state.players.map((e) => {
@@ -106,8 +80,15 @@ function Game() {
 }
 
 function SplashScreen() {
+    const handleStartGameButton = (e: SyntheticEvent) => {
+        sendToServer({type: "startGame"});
+    }
+
     return <div className="splashScreen">
-        Ожидание начала игры
+        <div>Ожидание начала игры</div>
+        <div>
+            { state.permissions == "ADMIN" ? <button onClick={handleStartGameButton}>Начать</button> : null }
+        </div>
     </div>
 }
 
@@ -122,13 +103,13 @@ function QuestionsTable() {
     return <div className="questionsTable" style={{width: `${questionsTableWidth}vw`}}>
         {
             state.categories.map((category, ci) => {
-                return <CategoryRow category={category} questionsInCategory={questionsInCategory} key={ci}></CategoryRow>
+                return <CategoryRow category={category} categoryIndex={ci} questionsInCategory={questionsInCategory} key={ci}></CategoryRow>
             })
         }
     </div>
 }
 
-function CategoryRow(prop: {category: ICategory, questionsInCategory:number}) {
+function CategoryRow(prop: {category: ICategory, categoryIndex: number, questionsInCategory:number}) {
     let result = [];
     let categoryStyle = {
         width: (questionsTableWidth * 0.35) + "vw",
@@ -146,7 +127,14 @@ function CategoryRow(prop: {category: ICategory, questionsInCategory:number}) {
         } else {
             price = "";
         }
-        result.push(<div className="priceButton" style={priceButtonStyle}  key={i}>{price}</div>);
+        let handleButtonClick = (e: SyntheticEvent) => {
+            sendToServer({
+                type: "questionOpen",
+                category: prop.categoryIndex,
+                question: i
+            });
+        }
+        result.push(<div className="priceButton" style={priceButtonStyle}  key={i} onClick={handleButtonClick}>{price}</div>);
     }
 
     return <div className="categoryRow">{result}</div>
@@ -155,7 +143,8 @@ function CategoryRow(prop: {category: ICategory, questionsInCategory:number}) {
 
 
 function QuestionBlock() {
-    let t = "В карельской сказке волшебный жернов мог намолоть все, что захочешь. Оправляясь рыбачить, богач взял жернов и велел намолоть этого, да побольше. От тяжести лодка утонула, но жернов и на дне моря продолжал молоть. Что же?"
+    let t = state.questionText;
+    //let t = "В карельской сказке волшебный жернов мог намолоть все, что захочешь. Оправляясь рыбачить, богач взял жернов и велел намолоть этого, да побольше. От тяжести лодка утонула, но жернов и на дне моря продолжал молоть. Что же?"
     // let t = "КЕК";
     let textWidth = getTextWidth(t, "1.0vw Futura Condensed");
     let questionsTableWidthInPx = window.innerWidth * questionsTableWidth / 100;
@@ -180,19 +169,5 @@ function Player(prop: {data: IPlayer}) {
     </div>
 }
 
-let render = () => ReactDOM.render(<App />, document.querySelector('#root'));
+export let render = () => ReactDOM.render(<App />, document.querySelector('#root'));
 render();
-
-
-
-
-
-let socket = new WebSocket("ws://localhost:8080/");
-
-socket.onopen = (e) => {
-    console.log("connected");
-}
-
-socket.onmessage = (e) => {
-    let message = JSON.parse(e.data);
-}

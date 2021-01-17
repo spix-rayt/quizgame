@@ -1,8 +1,8 @@
 package io.spixy.quizgame
 
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import java.io.File
-
-val roundList = mutableListOf<Round>()
 
 class Round {
     val categoryList = mutableListOf<Category>()
@@ -17,13 +17,18 @@ class Question {
     var text: String = ""
     var image: File? = null
     var answer: String = ""
+    var price: Int = 0
 }
 
 class GameData(val folder: File) {
+    val roundList = mutableListOf<Round>()
+
+
     init {
         var currentRound: Round? = null
         var currentCategory: Category? = null
         var currentQuestion: Question? = null
+        var roundNumber = 0
         File(folder, "main.txt").readLines().forEachIndexed { n, s ->
             val line = s.trimStart().toLowerCase()
             if(line.startsWith("#")) {
@@ -34,6 +39,7 @@ class GameData(val folder: File) {
                 currentRound = Round().also {
                     roundList.add(it)
                 }
+                roundNumber++
                 currentCategory = null
                 currentQuestion = null
             }
@@ -48,8 +54,11 @@ class GameData(val folder: File) {
 
             if(line.startsWith("+вопрос")) {
                 currentQuestion = Question().also {
-                    currentCategory?.questionsList?.add(it)
-                    it.text = line.substring("+вопрос".length).trim()
+                    currentCategory?.let { currentCategory ->
+                        currentCategory.questionsList.add(it)
+                        it.text = line.substring("+вопрос".length).trim()
+                        it.price = roundNumber * currentCategory.questionsList.size * 100
+                    }
                 }
             }
 

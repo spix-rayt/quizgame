@@ -11,6 +11,34 @@ html, body {
     text-align: center;
 }
 
+.auth {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    font-size: 1vw;
+
+
+    span {
+        display: flex;
+        color: white;
+        margin-top: 3vh;
+    }
+
+    input {
+        width: 15vw;
+        font-size: 1.5vw;
+    }
+
+    button {
+        margin-top: calc(3vh + 1vw);
+        width: 5vw;
+        font-size: 1.5vw;
+    }
+}
+
 .game {
     display: flex;
     flex-direction: row;
@@ -48,14 +76,16 @@ html, body {
     flex-direction: column;
     justify-content: center;
 
+    margin-top: 1vh;
+
     .categoryRow {
         display: flex;
         flex-direction: row;
         box-sizing: border-box;
         border-bottom: 1px solid hsl(0, 100%, 80%);
 
-        &:last-child {
-            border-bottom: none;
+        &:first-child {
+            border-top: 1px solid hsl(0, 100%, 80%);
         }
 
         .category {
@@ -64,6 +94,9 @@ html, body {
             color: white;
             align-items: center;
             justify-content: center;
+            word-wrap: normal;
+            font-size: 2vw;
+            border-left: 1px solid hsl(0, 100%, 80%);
         }
         
         .priceButton {
@@ -78,6 +111,7 @@ html, body {
             border-right: 1px solid transparent;
             border-bottom: 1px solid transparent;
             border-top: 1px solid transparent;
+            font-size: 2vw;
     
             &:hover {
                 border-left: 1px solid yellow;
@@ -85,12 +119,17 @@ html, body {
                 border-bottom: 1px solid yellow;
                 border-top: 1px solid yellow;
             }
+
+            &:last-child {
+                border-right: 1px solid hsl(0, 100%, 80%);
+            }
         }
     }
 }
 
 .splashScreen {
     display: flex;
+    flex-direction: column;
     width: 40vw;
     height: 20vw;
     color: white;

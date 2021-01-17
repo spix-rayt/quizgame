@@ -27,4 +27,5 @@ dependencies {
     implementation "ch.qos.logback:logback-classic:1.2.3"
 
     implementation "org.yaml:snakeyaml:1.21"
+    implementation 'com.google.code.gson:gson:2.7'
 }
