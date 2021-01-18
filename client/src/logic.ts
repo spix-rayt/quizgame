@@ -2,10 +2,15 @@ import { stat } from 'fs/promises';
 import { render } from './index';
 
 export interface IPlayer {
-    avatar: string,
-    name: string,
-    points: number,
-    online: boolean
+    name: string;
+    points: number;
+    online: boolean;
+    answers: boolean;
+    readyToAnswer: boolean;
+}
+
+export function playerIsLocal(player: IPlayer) {
+    return player.name == state.playerName;
 }
 
 export interface ICategory {
@@ -13,17 +18,21 @@ export interface ICategory {
     questions: Array<number>
 }
 
-export const state = {
-    playerName: localStorage.getItem("playerName") ?? "",
-    connecting: true,
-    authorized: false,
-    permissions: "",
-    gamePhase: "",
-    localPlayerShouldAnswer: false,
-    categories: new Array<ICategory>(),
-    players: new Array<IPlayer>(),
-    questionText: ""
+export class GlobalState {
+    connecting: boolean = true;
+    authorized: boolean = false;
+    permissions: "ADMIN" | "PLAYER" | "SPECTATOR";
+    gamePhase: "SPLASHSCREEN" | "QUESTIONSTABLE" | "QUESTION" | "ENDGAME";
+    playerName: string = "";
+    categories = new Array<ICategory>();
+    players = new Array<IPlayer>();
+    playerAvatars = new Map<string, string>();
+    questionText: string;
+    questionImage: string;
+    questionAnswer: string;
 }
+
+export const state = new GlobalState();
 
 declare global {
     interface Window {
@@ -33,30 +42,37 @@ declare global {
 
 window.debug = state;
 
+document.body.onkeydown = (e) => {
+    if(e.code == "Space" && !e.repeat) {
+        sendToServer({
+            type: 'spacePressed'
+        });
+    }
+}
+
 export function sendToServer(message: any) {
     socket.send(JSON.stringify(message));
 }
 
 export function tryAuth() {
-    state.playerName = localStorage.getItem("playerName");
+    let playerName = localStorage.getItem("playerName");
     let key = localStorage.getItem("key");
-    if(state.playerName == null || key == null) {
+    if(playerName == null || key == null) {
         state.connecting = false;
         state.authorized = false;
-        render();
     } else {
         sendToServer({
             type: "auth",
-            name: state.playerName,
+            name: playerName,
             key: key
         });
     }
+    render();
 }
 
 let socket = new WebSocket("ws://localhost:8080/");
 
 socket.onopen = (e) => {
-    console.log("connected");
     tryAuth();
 }
 
@@ -64,13 +80,18 @@ socket.onmessage = (e) => {
     let message = JSON.parse(e.data);
     if(message.type == "auth") {
         state.connecting = false;
-        state.authorized = message.result;
+        state.authorized = message.authorized;
         state.permissions = message.permissions;
+        state.playerName = message.playerName;
         render();
     }
     if(message.type == "updateState") {
         delete message.type;
         Object.assign(state, message);
+        render();
+    }
+    if(message.type == "updatePlayerAvatar") {
+        state.playerAvatars.set(message.name, message.avatar);
         render();
     }
 }

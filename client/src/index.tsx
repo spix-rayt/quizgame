@@ -1,7 +1,9 @@
 import './styles.scss';
 import React, { ChangeEvent, SyntheticEvent, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ICategory, IPlayer, sendToServer, state, tryAuth } from './logic';
+import { ICategory, IPlayer, playerIsLocal, sendToServer, state, tryAuth } from './logic';
+import SpeechBubbleSvg from './three-dots-in-speech-bubble.svg';
+import CheckMarkSvg from './check-mark.svg';
 
 let questionsTableWidth = 40;
 
@@ -26,7 +28,7 @@ function App() {
 }
 
 function Auth() {
-    const [playerName, setPlayerName] = useState(state.playerName);
+    const [playerName, setPlayerName] = useState(localStorage.getItem("playerName"));
     const [key, setKey] = useState("");
     
     let handleNameChange = (e: ChangeEvent<HTMLInputElement>) => setPlayerName(e.target.value);
@@ -65,17 +67,26 @@ function Game() {
         gamePhaseComponent = <div></div>
     }
 
+    let localPlayerShouldAnswer = false;
+    for(let player of state.players) {
+        if(playerIsLocal(player) && player.answers) {
+            localPlayerShouldAnswer = true;
+            break;
+        }
+    }
+
     return <div className="game">
         {gamePhaseComponent}
         <div className="players-container">
             {
                 state.players.map((e) => {
-                    return <Player data={e} key={e.name}></Player>
+                    return <Player player={e} key={e.name}></Player>
                 })
             }
         </div>
-        { state.localPlayerShouldAnswer ? <div className="screenLightLeft"></div> : null}
-        { state.localPlayerShouldAnswer ? <div className="screenLightRight"></div> : null}    
+        { localPlayerShouldAnswer ? <div className="screenLightLeft"></div> : null}
+        { localPlayerShouldAnswer ? <div className="screenLightRight"></div> : null}
+        { state.permissions == 'ADMIN' ? <div className="answerField">{state.questionAnswer}</div> : null}
     </div>
 }
 
@@ -143,10 +154,7 @@ function CategoryRow(prop: {category: ICategory, categoryIndex: number, question
 
 
 function QuestionBlock() {
-    let t = state.questionText;
-    //let t = "В карельской сказке волшебный жернов мог намолоть все, что захочешь. Оправляясь рыбачить, богач взял жернов и велел намолоть этого, да побольше. От тяжести лодка утонула, но жернов и на дне моря продолжал молоть. Что же?"
-    // let t = "КЕК";
-    let textWidth = getTextWidth(t, "1.0vw Futura Condensed");
+    let textWidth = getTextWidth(state.questionText, "1.0vw Futura Condensed");
     let questionsTableWidthInPx = window.innerWidth * questionsTableWidth / 100;
     let fontSize = 4.5 / (textWidth / questionsTableWidthInPx);
     if(fontSize > 3.0) {
@@ -157,15 +165,51 @@ function QuestionBlock() {
     }
 
     return <div className="questionBlock" style={{width: questionsTableWidth + "vw", height: (questionsTableWidth * 0.65) + "vw", fontSize: `${fontSize}vw`}}>
-        {t}
+        {state.questionText}
+        { state.questionImage != null ? <img src={`/file/${state.questionImage}`}></img> : null}
     </div>
 }
 
-function Player(prop: {data: IPlayer}) {
-    return <div className="player">
-        <img src={prop.data.avatar} className="avatar"></img>
-        <div className="points">{prop.data.points}</div>
-        <div className="name">{prop.data.name}</div>
+function Player(prop: {player: IPlayer}) {
+    let uploadAvatar = () => {};
+
+    if(playerIsLocal(prop.player)) {
+        uploadAvatar = () => {
+            let input = document.createElement('input') as HTMLInputElement;
+            input.type = "file";
+            input.click();
+            input.onchange = function(e) {
+                let fileReader = new FileReader();
+                fileReader.onload = function(e) {
+                    let bytes = e.target.result;
+                    if(bytes instanceof ArrayBuffer) {
+                        if(bytes.byteLength < 1024 * 1024 * 5) {
+                            var base64Image = "data:application/octet-stream;base64," + btoa(String.fromCharCode.apply(null, new Uint8Array(bytes)));
+                            sendToServer({
+                                type: 'uploadAvatar',
+                                image: base64Image
+                            });
+                        } else {
+                            alert("Максимальный размер файла 5MiB");
+                        }
+                    }
+                }
+    
+                fileReader.readAsArrayBuffer(input.files[0]);
+            }
+        }
+    }
+    
+
+    let avatarBase64 = state.playerAvatars.get(prop.player.name) ?? "";
+
+    return <div className={`player ${prop.player.answers ? 'answers' : ''} ${playerIsLocal(prop.player) ? 'local' : ''}`}>
+        <div className="icons">
+            {prop.player.readyToAnswer ? <img src={CheckMarkSvg}></img> : null}
+        </div>
+        <img src={avatarBase64} className="avatar" onClick={uploadAvatar}></img>
+        <div className="points">{prop.player.points}</div>
+        <div className="name">{prop.player.name}</div>
     </div>
 }
 

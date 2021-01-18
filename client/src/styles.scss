@@ -149,6 +149,12 @@ html, body {
 
     align-items: center;
     justify-content: center;
+
+    img {
+        width: 40vw;
+        height: 40vh;
+        object-fit: contain;
+    }
 }
 
 .players-container {
@@ -170,14 +176,17 @@ html, body {
     margin: 20px;
     justify-content: center;
     color: white;
+    padding: 10px;
+
+    &.local .avatar {
+        cursor: pointer;
+    }
 
     .avatar {
         width: 6vw;
-        height: 6vw;
-
-        img {
-            object-fit: contain;
-        }
+        height: 8.5vw;
+        background-color: white;
+        object-fit: cover;
     }
 
     .points {
@@ -191,4 +200,25 @@ html, body {
         text-align: center;
         font-size: 1vw;
     }
+
+    &.answers {
+        border: 1px solid yellow;
+    }
+
+    .icons {
+        width: 100%;
+        height: 1.5vw;
+        img {
+            width: 1.5vw;
+            height: 1.5vw;
+        }
+    }
+}
+
+.answerField {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    color: white;
+    font-size: 2vw;
 }

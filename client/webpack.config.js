@@ -12,7 +12,7 @@ module.exports = {
     },
     target: 'web',
     resolve: {
-        extensions: ['.ts', '.tsx', '.js', '.scss']
+        extensions: ['.ts', '.tsx', '.js', '.scss', '.svg']
     },
     module: {
         rules: [

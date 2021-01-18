@@ -1,7 +1,5 @@
 package io.spixy.quizgame
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import java.io.File
 
 class Round {
@@ -30,12 +28,12 @@ class GameData(val folder: File) {
         var currentQuestion: Question? = null
         var roundNumber = 0
         File(folder, "main.txt").readLines().forEachIndexed { n, s ->
-            val line = s.trimStart().toLowerCase()
+            val line = s.trimStart()
             if(line.startsWith("#")) {
                 return@forEachIndexed
             }
 
-            if(line.startsWith("+раунд")) {
+            if(line.toLowerCase().startsWith("+раунд")) {
                 currentRound = Round().also {
                     roundList.add(it)
                 }
@@ -44,7 +42,7 @@ class GameData(val folder: File) {
                 currentQuestion = null
             }
 
-            if(line.startsWith("+категория")) {
+            if(line.toLowerCase().startsWith("+категория")) {
                 currentCategory = Category().also {
                     currentRound?.categoryList?.add(it)
                     it.name = line.substring("+категория".length).trim()
@@ -52,7 +50,7 @@ class GameData(val folder: File) {
                 currentQuestion = null
             }
 
-            if(line.startsWith("+вопрос")) {
+            if(line.toLowerCase().startsWith("+вопрос")) {
                 currentQuestion = Question().also {
                     currentCategory?.let { currentCategory ->
                         currentCategory.questionsList.add(it)
@@ -66,7 +64,7 @@ class GameData(val folder: File) {
                 val (parameterName, value) = line.split("=", limit = 2).map { it.trim() }
                 when(parameterName.toLowerCase()) {
                     "ответ" -> currentQuestion?.answer = value
-                    "изображение" -> currentQuestion?.image = File(value)
+                    "изображение" -> currentQuestion?.image = File(folder, value)
                 }
             }
         }
