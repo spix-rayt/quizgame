@@ -16,7 +16,7 @@ class Player(val permissions: PlayerPermissions) {
     var outgoing: SendChannel<Frame>? = null
     var points = 0
     var readyToAnswer = false
-    var answers = false
+    var answerBlock = false
     var avatar = ""
 
     fun sendMessage(payload: Map<String, Any?>) {
@@ -28,7 +28,7 @@ class Player(val permissions: PlayerPermissions) {
     fun sendUpdateAllPlayers() {
         sendMessage(mapOf(
             "type" to "updateState",
-            "players" to players.values.filter { it.permissions == PlayerPermissions.PLAYER }.map { it.toJson() }
+            "players" to game.players.values.filter { it.permissions == PlayerPermissions.PLAYER }.map { it.toJson() }
         ))
     }
 
@@ -38,7 +38,7 @@ class Player(val permissions: PlayerPermissions) {
             addProperty("points", points)
             addProperty("online", outgoing != null)
             addProperty("readyToAnswer", readyToAnswer)
-            addProperty("answers", answers)
+            addProperty("answers", game.playerAnswers == this@Player)
         }
     }
 

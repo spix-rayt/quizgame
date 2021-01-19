@@ -16,6 +16,7 @@ class Question {
     var image: File? = null
     var answer: String = ""
     var price: Int = 0
+    var enabled = true
 }
 
 class GameData(val folder: File) {

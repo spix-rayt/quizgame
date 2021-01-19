@@ -77,6 +77,8 @@ function Game() {
 
     return <div className="game">
         {gamePhaseComponent}
+        <Timer></Timer>
+        <AdminAnswerConfirmation></AdminAnswerConfirmation>
         <div className="players-container">
             {
                 state.players.map((e) => {
@@ -170,6 +172,38 @@ function QuestionBlock() {
     </div>
 }
 
+function AdminAnswerConfirmation() {
+    if(state.permissions != "ADMIN") {
+        return null;
+    }
+    if(state.gamePhase != "QUESTION") {
+        return null;
+    }
+    if(state.players.filter((p) => p.answers).length == 0) {
+        return null;
+    }
+
+    let handleRightAnswer = (e: SyntheticEvent) => {
+        sendToServer({
+            type: "playerDoAnswer",
+            right: true
+        });
+    }
+
+    let handleWrongAnswer = (e: SyntheticEvent) => {
+        sendToServer({
+            type: "playerDoAnswer",
+            right: false
+        });
+    }
+    
+    return <div className="adminAnswerConfirmation">
+        <div>Ответ верный?</div>
+        <button onClick={handleRightAnswer}>Да</button>
+        <button onClick={handleWrongAnswer}>Нет</button>
+    </div>
+}
+
 function Player(prop: {player: IPlayer}) {
     let uploadAvatar = () => {};
 
@@ -211,6 +245,31 @@ function Player(prop: {player: IPlayer}) {
         <div className="points">{prop.player.points}</div>
         <div className="name">{prop.player.name}</div>
     </div>
+}
+
+class Timer extends React.Component {
+    componentDidMount() {
+        console.log("start timer");
+        setInterval(() => {
+            this.forceUpdate();
+        }, 10);
+    }
+
+    render() {
+        let k = 0;
+        if(state.timerEnd > state.timerStart) {
+            k = (state.timerEnd - performance.now()) / (state.timerEnd - state.timerStart);
+        }
+        if(k > 1.0) {
+            k = 1.0;
+        }
+        if(k < 0.0) {
+            k = 0.0;
+        }
+        return <div className="timer">
+            <div style={{"width": `${k * 100}%`}}></div>
+        </div>
+    }
 }
 
 export let render = () => ReactDOM.render(<App />, document.querySelector('#root'));

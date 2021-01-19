@@ -1,4 +1,3 @@
-import { stat } from 'fs/promises';
 import { render } from './index';
 
 export interface IPlayer {
@@ -30,6 +29,8 @@ export class GlobalState {
     questionText: string;
     questionImage: string;
     questionAnswer: string;
+    timerStart: number = 0;
+    timerEnd: number = 0;
 }
 
 export const state = new GlobalState();
@@ -70,7 +71,7 @@ export function tryAuth() {
     render();
 }
 
-let socket = new WebSocket("ws://localhost:8080/");
+let socket = new WebSocket(`ws://${location.host}/`);
 
 socket.onopen = (e) => {
     tryAuth();
@@ -92,6 +93,11 @@ socket.onmessage = (e) => {
     }
     if(message.type == "updatePlayerAvatar") {
         state.playerAvatars.set(message.name, message.avatar);
+        render();
+    }
+    if(message.type == "setTimer") {
+        state.timerStart = performance.now();
+        state.timerEnd = performance.now() + message.milliseconds;
         render();
     }
 }
