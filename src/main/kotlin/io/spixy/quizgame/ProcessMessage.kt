@@ -30,7 +30,7 @@ fun processMessage(jsonObject: JsonObject, outgoing: SendChannel<Frame>) {
                 "playerName" to player.name
             ))
             game.updatePlayersForAll()
-            player.sendMessage(game.stateToJson(player.permissions))
+            player.sendMessage(game.basicGameStateToJson(player.permissions))
             game.players.values.forEach {
                 player.sendMessage(it.toUpdatePlayerAvatarMessage())
             }
@@ -82,7 +82,7 @@ fun processMessage(jsonObject: JsonObject, outgoing: SendChannel<Frame>) {
         }
         if(messageType == "spacePressed") {
             if(game.gamePhase == GamePhase.QUESTION) {
-                game.allowToAnswer()
+                game.allowToAnswer(10000L)
             }
         }
         if(messageType == "playerDoAnswer") {

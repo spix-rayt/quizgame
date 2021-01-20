@@ -1,7 +1,7 @@
 import './styles.scss';
 import React, { ChangeEvent, SyntheticEvent, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ICategory, IPlayer, playerIsLocal, sendToServer, state, tryAuth } from './logic';
+import { ICategory, IPlayer, playerIsLocal, sendToServer, state, tryAuth, uploadAvatar } from './engine';
 import SpeechBubbleSvg from './three-dots-in-speech-bubble.svg';
 import CheckMarkSvg from './check-mark.svg';
 
@@ -62,6 +62,9 @@ function Game() {
     }
     if(state.gamePhase == "QUESTION") {
         gamePhaseComponent = <QuestionBlock></QuestionBlock>
+    }
+    if(state.gamePhase == "ANSWER") {
+        gamePhaseComponent = <AnswerBlock></AnswerBlock>
     }
     if(state.gamePhase == "ENDGAME") {
         gamePhaseComponent = <div></div>
@@ -172,6 +175,12 @@ function QuestionBlock() {
     </div>
 }
 
+function AnswerBlock() {
+    return <div className="answerBlock" style={{width: questionsTableWidth + "vw", height: (questionsTableWidth * 0.65) + "vw"}}>
+        {state.questionAnswer}
+    </div>
+}
+
 function AdminAnswerConfirmation() {
     if(state.permissions != "ADMIN") {
         return null;
@@ -205,43 +214,13 @@ function AdminAnswerConfirmation() {
 }
 
 function Player(prop: {player: IPlayer}) {
-    let uploadAvatar = () => {};
-
-    if(playerIsLocal(prop.player)) {
-        uploadAvatar = () => {
-            let input = document.createElement('input') as HTMLInputElement;
-            input.type = "file";
-            input.click();
-            input.onchange = function(e) {
-                let fileReader = new FileReader();
-                fileReader.onload = function(e) {
-                    let bytes = e.target.result;
-                    if(bytes instanceof ArrayBuffer) {
-                        if(bytes.byteLength < 1024 * 1024 * 5) {
-                            var base64Image = "data:application/octet-stream;base64," + btoa(String.fromCharCode.apply(null, new Uint8Array(bytes)));
-                            sendToServer({
-                                type: 'uploadAvatar',
-                                image: base64Image
-                            });
-                        } else {
-                            alert("Максимальный размер файла 5MiB");
-                        }
-                    }
-                }
-    
-                fileReader.readAsArrayBuffer(input.files[0]);
-            }
-        }
-    }
-    
-
     let avatarBase64 = state.playerAvatars.get(prop.player.name) ?? "";
 
     return <div className={`player ${prop.player.answers ? 'answers' : ''} ${playerIsLocal(prop.player) ? 'local' : ''}`}>
         <div className="icons">
             {prop.player.readyToAnswer ? <img src={CheckMarkSvg}></img> : null}
         </div>
-        <img src={avatarBase64} className="avatar" onClick={uploadAvatar}></img>
+        <img src={avatarBase64} className="avatar" onClick={() => {if(playerIsLocal(prop.player)) uploadAvatar(); }}></img>
         <div className="points">{prop.player.points}</div>
         <div className="name">{prop.player.name}</div>
     </div>
@@ -273,4 +252,3 @@ class Timer extends React.Component {
 }
 
 export let render = () => ReactDOM.render(<App />, document.querySelector('#root'));
-render();

@@ -148,7 +148,6 @@ button {
     display: flex;
     color: white;
     padding: 1vw;
-
     align-items: center;
     justify-content: center;
 
@@ -157,6 +156,16 @@ button {
         height: 100%;
         object-fit: contain;
     }
+}
+
+.answerBlock {
+    display: flex;
+    color: white;
+    padding: 1vw;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 3vw;
 }
 
 .players-container {

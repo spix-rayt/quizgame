@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 enum class GamePhase {
-    SPLASHSCREEN, QUESTIONSTABLE, QUESTION, ENDGAME
+    SPLASHSCREEN, QUESTIONSTABLE, QUESTION, ANSWER, ENDGAME
 }
 
 class Game {
@@ -20,9 +20,10 @@ class Game {
     var currentQuestion: Question = Question()
     var playerAnswers: Player? = null
     private var answersAllowedStartTime = -1L
+    private var timeToAnswer = 0L
     var playerReadyToAnswerStartTime = -1L
 
-    fun setTimerForAllPlayers(milliseconds: Int) {
+    fun setTimerForAllPlayers(milliseconds: Long) {
         val timerMessage = mapOf(
             "type" to "setTimer",
             "milliseconds" to milliseconds
@@ -30,10 +31,11 @@ class Game {
         players.values.forEach { it.sendMessage(timerMessage) }
     }
 
-    fun allowToAnswer() {
+    fun allowToAnswer(time: Long) {
         if(gamePhase == GamePhase.QUESTION) {
             answersAllowedStartTime = System.currentTimeMillis()
-            setTimerForAllPlayers(10000)
+            timeToAnswer = time
+            setTimerForAllPlayers(time)
             if(getReadyToAnswerPlayersCount() > 0) {
                 playerReadyToAnswerStartTime = System.currentTimeMillis()
             }
@@ -52,7 +54,7 @@ class Game {
                     playerAnswers.answerBlock = true
                     this.playerAnswers = null
                     updatePlayersForAll()
-                    allowToAnswer()
+                    allowToAnswer(2000L)
                 }
             }
         }
@@ -65,7 +67,7 @@ class Game {
     fun startGame() {
         if(gamePhase == GamePhase.SPLASHSCREEN) {
             gamePhase = GamePhase.QUESTIONSTABLE
-            updateGameStateForAll()
+            updateBasicGameStateForAll()
 
             GlobalScope.launch(gameThread) {
                 while (gamePhase != GamePhase.ENDGAME) {
@@ -81,7 +83,7 @@ class Game {
                         }
                     }
                     if(isAnswersAllowed()) {
-                        if(System.currentTimeMillis() - answersAllowedStartTime >= 10000) {
+                        if(System.currentTimeMillis() - answersAllowedStartTime >= timeToAnswer) {
                             val randomReadyToAnswerPlayer = game.getRandomReadyToAnswerPlayer()
                             if(randomReadyToAnswerPlayer != null) {
                                 answersAllowedStartTime = -1L
@@ -99,8 +101,8 @@ class Game {
         }
     }
 
-    fun updateGameStateForAll() {
-        players.values.forEach { it.sendMessage(stateToJson(it.permissions)) }
+    fun updateBasicGameStateForAll() {
+        players.values.forEach { it.sendMessage(basicGameStateToJson(it.permissions)) }
     }
 
     fun updatePlayersForAll() {
@@ -114,7 +116,7 @@ class Game {
                 if(newQuestion.enabled) {
                     currentQuestion = newQuestion
                     gamePhase = GamePhase.QUESTION
-                    updateGameStateForAll()
+                    updateBasicGameStateForAll()
                     playerAnswers = null
                     answersAllowedStartTime = -1L
                 }
@@ -124,22 +126,19 @@ class Game {
 
     fun questionClose() {
         GlobalScope.launch(gameThread) {
-            currentQuestion.enabled = false
-            currentQuestion = Question().apply {
-                text = currentQuestion.answer
-            }
+            gamePhase = GamePhase.ANSWER
             players.values.forEach {
                 it.readyToAnswer = false
                 it.answerBlock = false
             }
             playerAnswers = null
             answersAllowedStartTime = -1L
-            updateGameStateForAll()
+            updateBasicGameStateForAll()
             updatePlayersForAll()
 
             delay(2000)
 
-
+            currentQuestion.enabled = false
             gamePhase = GamePhase.QUESTIONSTABLE
             if(countQuestions() == 0) {
                 if(nextRounds.isNotEmpty()) {
@@ -148,7 +147,7 @@ class Game {
                     gamePhase = GamePhase.ENDGAME
                 }
             }
-            updateGameStateForAll()
+            updateBasicGameStateForAll()
             updatePlayersForAll()
         }
     }
@@ -161,7 +160,7 @@ class Game {
         return result
     }
 
-    fun stateToJson(permissions: PlayerPermissions): Map<String, Any?> {
+    fun basicGameStateToJson(permissions: PlayerPermissions): Map<String, Any?> {
         return when(gamePhase) {
             GamePhase.SPLASHSCREEN -> {
                 mapOf(
@@ -183,6 +182,13 @@ class Game {
                     "questionText" to currentQuestion.text,
                     "questionImage" to currentQuestion.image?.let { FileMapper.getCodeByFile(it) },
                     "questionAnswer" to (currentQuestion.answer.takeIf { permissions == PlayerPermissions.ADMIN } ?: "")
+                )
+            }
+            GamePhase.ANSWER -> {
+                mapOf(
+                    "type" to "updateState",
+                    "gamePhase" to gamePhase.name,
+                    "questionAnswer" to currentQuestion.answer
                 )
             }
             GamePhase.ENDGAME -> {

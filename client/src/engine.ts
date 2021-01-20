@@ -21,7 +21,7 @@ export class GlobalState {
     connecting: boolean = true;
     authorized: boolean = false;
     permissions: "ADMIN" | "PLAYER" | "SPECTATOR";
-    gamePhase: "SPLASHSCREEN" | "QUESTIONSTABLE" | "QUESTION" | "ENDGAME";
+    gamePhase: "SPLASHSCREEN" | "QUESTIONSTABLE" | "QUESTION" | "ANSWER" | "ENDGAME";
     playerName: string = "";
     categories = new Array<ICategory>();
     players = new Array<IPlayer>();
@@ -43,11 +43,17 @@ declare global {
 
 window.debug = state;
 
+let testAudio = new Audio("quack_5.mp3");
+
 document.body.onkeydown = (e) => {
+    console.log(e);
     if(e.code == "Space" && !e.repeat) {
         sendToServer({
             type: 'spacePressed'
         });
+    }
+    if(e.code == "Enter" && !e.repeat) {
+        testAudio.play();
     }
 }
 
@@ -99,5 +105,25 @@ socket.onmessage = (e) => {
         state.timerStart = performance.now();
         state.timerEnd = performance.now() + message.milliseconds;
         render();
+    }
+}
+
+export function uploadAvatar() {
+    let input = document.createElement('input') as HTMLInputElement;
+    input.type = "file";
+    input.click();
+    input.onchange = function(e) {
+        if(input.files[0].size > 1024 * 1024 * 5) {
+            alert("Слишком большой файл");
+        }
+        let fileReader = new FileReader();
+        fileReader.onloadend = (e) => {
+            let base64Image = e.target.result as string;
+            sendToServer({
+                type: 'uploadAvatar',
+                image: base64Image
+            });
+        }
+        fileReader.readAsDataURL(input.files[0]);
     }
 }
