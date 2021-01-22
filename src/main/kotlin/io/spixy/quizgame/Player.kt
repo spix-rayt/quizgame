@@ -18,6 +18,7 @@ class Player(val permissions: PlayerPermissions) {
     var readyToAnswer = false
     var answerBlock = false
     var avatar = ""
+    var shouldSelectedByAdmin = false
 
     fun sendMessage(payload: Map<String, Any?>) {
         GlobalScope.launch(Dispatchers.IO) {
@@ -28,7 +29,7 @@ class Player(val permissions: PlayerPermissions) {
     fun sendUpdateAllPlayers() {
         sendMessage(mapOf(
             "type" to "updateState",
-            "players" to game.players.values.filter { it.permissions == PlayerPermissions.PLAYER }.map { it.toJson() }
+            "players" to game.getParticipatingPlayers().map { it.toJson() }
         ))
     }
 
@@ -39,6 +40,8 @@ class Player(val permissions: PlayerPermissions) {
             addProperty("online", outgoing != null)
             addProperty("readyToAnswer", readyToAnswer)
             addProperty("answers", game.playerAnswers == this@Player)
+            addProperty("selectsNextQuestion", game.playerSelectsNextQuestion == this@Player)
+            addProperty("shouldSelectedByAdmin", shouldSelectedByAdmin)
         }
     }
 

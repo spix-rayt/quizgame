@@ -58,7 +58,7 @@ fun processMessage(jsonObject: JsonObject, outgoing: SendChannel<Frame>) {
             }
         }
         if(messageType == "spacePressed") {
-            if(game.gamePhase == GamePhase.QUESTION) {
+            if(game.gamePhase == GamePhase.QUESTION && game.players.values.none { it.shouldSelectedByAdmin }) {
                 if(!player.answerBlock) {
                     player.readyToAnswer = true
                     if(game.getReadyToAnswerPlayersCount() == 1) {
@@ -75,7 +75,7 @@ fun processMessage(jsonObject: JsonObject, outgoing: SendChannel<Frame>) {
             game.startGame()
         }
         if(messageType == "questionOpen") {
-            game.questionOpen(
+            game.selectQuestion(
                 jsonObject.get("category").asInt,
                 jsonObject.get("question").asInt
             )
@@ -89,6 +89,14 @@ fun processMessage(jsonObject: JsonObject, outgoing: SendChannel<Frame>) {
             if(game.gamePhase == GamePhase.QUESTION) {
                 game.playerDoAnswer(jsonObject.get("right").asBoolean)
             }
+        }
+        if(messageType == "testQuestion") {
+            if(game.gamePhase == GamePhase.QUESTIONSTABLE) {
+                game.generateAndOpenTestQuestion()
+            }
+        }
+        if(messageType == "selectPlayer") {
+            game.selectPlayer(jsonObject["player"].asString)
         }
     }
 }

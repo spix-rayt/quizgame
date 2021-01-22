@@ -1,4 +1,11 @@
+import { stat } from 'fs/promises';
 import { render } from './index';
+import MeathookAudioPath from './meathook.mp3';
+
+export const globalVolume = 0.4;
+
+export let meathookAudio = new Audio(MeathookAudioPath);
+meathookAudio.volume = globalVolume;
 
 export interface IPlayer {
     name: string;
@@ -6,6 +13,8 @@ export interface IPlayer {
     online: boolean;
     answers: boolean;
     readyToAnswer: boolean;
+    selectsNextQuestion: boolean;
+    shouldSelectedByAdmin: boolean;
 }
 
 export function playerIsLocal(player: IPlayer) {
@@ -28,9 +37,13 @@ export class GlobalState {
     playerAvatars = new Map<string, string>();
     questionText: string;
     questionImage: string;
+    questionAudio: string;
     questionAnswer: string;
     timerStart: number = 0;
     timerEnd: number = 0;
+    questionAudioPlaying: boolean = false;
+    questionCatTrap: boolean = false;
+    fullscreenAnimation = false;
 }
 
 export const state = new GlobalState();
@@ -43,8 +56,6 @@ declare global {
 
 window.debug = state;
 
-let testAudio = new Audio("quack_5.mp3");
-
 document.body.onkeydown = (e) => {
     console.log(e);
     if(e.code == "Space" && !e.repeat) {
@@ -52,8 +63,10 @@ document.body.onkeydown = (e) => {
             type: 'spacePressed'
         });
     }
-    if(e.code == "Enter" && !e.repeat) {
-        testAudio.play();
+    if(e.code == "KeyT" && e.shiftKey && !e.repeat) {
+        sendToServer({
+            type: 'testQuestion'
+        });
     }
 }
 
@@ -94,6 +107,27 @@ socket.onmessage = (e) => {
     }
     if(message.type == "updateState") {
         delete message.type;
+
+        if(state.questionAudio == null && message.questionAudio != null) {
+            let audio = new Audio(`/file/${message.questionAudio}`);
+            audio.volume = globalVolume;
+            setTimeout(() => {
+                audio.onended = (e) => {
+                    state.questionAudioPlaying = false;
+                    render();
+                }
+                audio.play();
+                state.questionAudioPlaying = true;
+                render();
+            }, 1000);
+        }
+        console.log(state.questionCatTrap == false, message.questionCatTrap == true);
+
+        if(state.questionCatTrap == false && message.questionCatTrap == true) {
+            meathookAudio.play();
+            state.fullscreenAnimation = true;
+        }
+
         Object.assign(state, message);
         render();
     }

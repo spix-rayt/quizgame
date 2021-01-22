@@ -14,14 +14,27 @@ class Category {
 class Question {
     var text: String = ""
     var image: File? = null
+    var audio: File? = null
     var answer: String = ""
     var price: Int = 0
+    var realPrice: Int? = null
     var enabled = true
+    var isTestQuestion = false
+    var catTrap: String? = null
+
+    fun generateSimplified(): Question {
+        val q = Question()
+        q.text = text
+        q.image = image
+        q.audio = audio
+        q.answer = answer
+        q.price = price
+        return q
+    }
 }
 
 class GameData(val folder: File) {
     val roundList = mutableListOf<Round>()
-
 
     init {
         var currentRound: Round? = null
@@ -66,6 +79,9 @@ class GameData(val folder: File) {
                 when(parameterName.toLowerCase()) {
                     "ответ" -> currentQuestion?.answer = value
                     "изображение" -> currentQuestion?.image = File(folder, value)
+                    "звук" -> currentQuestion?.audio = File(folder, value)
+                    "кот" -> currentQuestion?.catTrap = value
+                    "настоящая цена" -> currentQuestion?.realPrice = value.toInt()
                 }
             }
         }

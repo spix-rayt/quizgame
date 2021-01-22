@@ -30,11 +30,12 @@ module.exports = {
                 ]
             },
             {
-                test: /\.(eot|svg|ttf|woff|woff2)$/,
+                test: /\.(eot|svg|ttf|woff|woff2|mp3|jpg)$/,
                 use: {
                     loader: 'file-loader',
                     options: {
-                        name: '[folder]/[name].[ext]'
+                        name: '[path][name].[ext]',
+                        context: 'src'
                     }
                 }
             }

@@ -1,9 +1,13 @@
 import './styles.scss';
 import React, { ChangeEvent, SyntheticEvent, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ICategory, IPlayer, playerIsLocal, sendToServer, state, tryAuth, uploadAvatar } from './engine';
-import SpeechBubbleSvg from './three-dots-in-speech-bubble.svg';
+import { ICategory, IPlayer, playerIsLocal, sendToServer, state, tryAuth, uploadAvatar, meathookAudio } from './engine';
+import AudioSvg from './audio.svg';
 import CheckMarkSvg from './check-mark.svg';
+import MeatHookImgPath from './meathook.jpg';
+
+let preloadedMeatHookImg = new Image();
+preloadedMeatHookImg.src = MeatHookImgPath;
 
 let questionsTableWidth = 40;
 
@@ -54,6 +58,12 @@ function Auth() {
 
 function Game() {
     let gamePhaseComponent;
+    if(state.fullscreenAnimation) {
+        if(state.questionCatTrap) {
+            return <CatTrapBlock></CatTrapBlock>
+        }
+    }
+
     if(state.gamePhase == "SPLASHSCREEN") {
         gamePhaseComponent = <SplashScreen></SplashScreen>
     }
@@ -156,8 +166,6 @@ function CategoryRow(prop: {category: ICategory, categoryIndex: number, question
     return <div className="categoryRow">{result}</div>
 }
 
-
-
 function QuestionBlock() {
     let textWidth = getTextWidth(state.questionText, "1.0vw Futura Condensed");
     let questionsTableWidthInPx = window.innerWidth * questionsTableWidth / 100;
@@ -170,8 +178,20 @@ function QuestionBlock() {
     }
 
     return <div className="questionBlock" style={{width: questionsTableWidth + "vw", height: (questionsTableWidth * 0.65) + "vw", fontSize: `${fontSize}vw`}}>
-        {state.questionText}
-        { state.questionImage != null ? <img src={`/file/${state.questionImage}`}></img> : null}
+        { state.questionText }
+        { state.questionImage != null ? <img className="questionImage" src={`/file/${state.questionImage}`}></img> : null }
+        { state.questionAudio != null ? <img className={`audioSvg ${state.questionAudioPlaying ? 'playing' : ''}`} src={AudioSvg}></img> : null }
+    </div>
+}
+
+function CatTrapBlock() {
+    let handleAnimationEnd = (e: SyntheticEvent) => {
+        state.fullscreenAnimation = false;
+        render();
+    }
+
+    return <div className="fullscreen">
+        <img src={preloadedMeatHookImg.src} className="meathookAnimation" onAnimationEnd={handleAnimationEnd}></img>
     </div>
 }
 
@@ -215,20 +235,30 @@ function AdminAnswerConfirmation() {
 
 function Player(prop: {player: IPlayer}) {
     let avatarBase64 = state.playerAvatars.get(prop.player.name) ?? "";
+    let avatarStyle = {
+        backgroundColor: avatarBase64 == "" ? 'white' : 'transparent'
+    }
 
-    return <div className={`player ${prop.player.answers ? 'answers' : ''} ${playerIsLocal(prop.player) ? 'local' : ''}`}>
+    let handleSelectPlayer = (e: SyntheticEvent) => {
+        sendToServer({
+            type: "selectPlayer",
+            player: prop.player.name
+        });
+    }
+
+    return <div className={`player ${prop.player.answers ? 'answers' : ''} ${prop.player.selectsNextQuestion && state.gamePhase == "QUESTIONSTABLE" ? 'selectsNextQuestion' : ''} ${playerIsLocal(prop.player) ? 'local' : ''}`}>
         <div className="icons">
             {prop.player.readyToAnswer ? <img src={CheckMarkSvg}></img> : null}
         </div>
-        <img src={avatarBase64} className="avatar" onClick={() => {if(playerIsLocal(prop.player)) uploadAvatar(); }}></img>
+        <img src={avatarBase64} className="avatar" style={avatarStyle} onClick={() => {if(playerIsLocal(prop.player)) uploadAvatar(); }}></img>
         <div className="points">{prop.player.points}</div>
         <div className="name">{prop.player.name}</div>
+        { prop.player.shouldSelectedByAdmin && state.permissions == "ADMIN" ? <button onClick={handleSelectPlayer}>Выбрать</button> : '' }
     </div>
 }
 
 class Timer extends React.Component {
     componentDidMount() {
-        console.log("start timer");
         setInterval(() => {
             this.forceUpdate();
         }, 10);
