@@ -10,12 +10,12 @@ import kotlin.random.Random
 import kotlin.random.nextInt
 
 enum class GamePhase {
-    SPLASHSCREEN, QUESTIONSTABLE, QUESTION, ANSWER, ENDGAME
+    SPLASHSCREEN, QUESTIONSTABLE, QUESTION, ENDGAME
 }
 
 class Game {
     val players = mutableMapOf<String, Player>()
-    val gameData = GameData(File("games/example"))
+    val gameData = GameData(File("games/nebulpack"))
     val nextRounds = gameData.roundList.toMutableList()
     var currentRound = nextRounds.removeFirst()
     var gamePhase = GamePhase.SPLASHSCREEN
@@ -160,31 +160,35 @@ class Game {
 
     fun closeQuestion() {
         GlobalScope.launch(gameThread) {
-            gamePhase = GamePhase.ANSWER
+            sendAnswer()
+
             players.values.forEach {
                 it.readyToAnswer = false
                 it.answerBlock = false
             }
             playerAnswers = null
             answersAllowedStartTime = -1L
-            updateBasicGameStateForAll()
-            updatePlayersForAll()
-
-            delay(2000)
-
             currentQuestion.enabled = false
             gamePhase = GamePhase.QUESTIONSTABLE
             if(countQuestions() == 0) {
-                if(nextRounds.isNotEmpty()) {
-                    currentRound = nextRounds.removeFirst()
-                } else {
-                    gamePhase = GamePhase.ENDGAME
-                }
+                nextRound()
             }
             generatedQuestion = null
             updateBasicGameStateForAll()
             updatePlayersForAll()
         }
+    }
+
+    fun sendAnswer() {
+        val answerMessage = mapOf(
+            "type" to "updateState",
+            "answer" to mapOf(
+                "text" to currentQuestion.answer,
+                "video" to currentQuestion.videoAnswer?.let { FileMapper.getCodeByFile(it) }
+            )
+        )
+
+        players.values.forEach { it.sendMessage(answerMessage) }
     }
 
     fun countQuestions(): Int {
@@ -219,6 +223,7 @@ class Game {
                 result["questionImage"] = sendQuestion.image?.let { FileMapper.getCodeByFile(it) }
                 result["questionAudio"] = sendQuestion.audio?.let { FileMapper.getCodeByFile(it) }
                 result["questionAnswer"] = (sendQuestion.answer.takeIf { permissions == PlayerPermissions.ADMIN } ?: "")
+                result["questionVideo"] = sendQuestion.video?.let { FileMapper.getCodeByFile(it) }
 
                 if(sendQuestion.catTrap != null) {
                     result["questionText"] = sendQuestion.catTrap
@@ -228,13 +233,6 @@ class Game {
                     result["questionCatTrap"] = sendQuestion.catTrap != null
                 }
                 result
-            }
-            GamePhase.ANSWER -> {
-                mapOf(
-                    "type" to "updateState",
-                    "gamePhase" to gamePhase.name,
-                    "questionAnswer" to sendQuestion.answer
-                )
             }
             GamePhase.ENDGAME -> {
                 mapOf(
@@ -278,6 +276,17 @@ class Game {
                 getParticipatingPlayers().filter { it != player }.forEach { it.answerBlock = true }
                 setPlayerForAnswer(player)
             }
+        }
+    }
+
+    fun nextRound() {
+        if(gamePhase == GamePhase.QUESTIONSTABLE) {
+            if(nextRounds.isNotEmpty()) {
+                currentRound = nextRounds.removeFirst()
+            } else {
+                gamePhase = GamePhase.ENDGAME
+            }
+            updateBasicGameStateForAll()
         }
     }
 }

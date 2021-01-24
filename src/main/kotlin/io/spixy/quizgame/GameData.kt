@@ -15,6 +15,8 @@ class Question {
     var text: String = ""
     var image: File? = null
     var audio: File? = null
+    var video: File? = null
+    var videoAnswer: File? = null
     var answer: String = ""
     var price: Int = 0
     var realPrice: Int? = null
@@ -79,7 +81,9 @@ class GameData(val folder: File) {
                 when(parameterName.toLowerCase()) {
                     "ответ" -> currentQuestion?.answer = value
                     "изображение" -> currentQuestion?.image = File(folder, value)
-                    "звук" -> currentQuestion?.audio = File(folder, value)
+                    "аудио" -> currentQuestion?.audio = File(folder, value)
+                    "видео" -> currentQuestion?.video = File(folder, value)
+                    "видео ответ" -> currentQuestion?.videoAnswer = File(folder, value)
                     "кот" -> currentQuestion?.catTrap = value
                     "настоящая цена" -> currentQuestion?.realPrice = value.toInt()
                 }

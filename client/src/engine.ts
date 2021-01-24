@@ -26,11 +26,16 @@ export interface ICategory {
     questions: Array<number>
 }
 
+export interface IAnswer {
+    text: string,
+    video: string | null
+}
+
 export class GlobalState {
     connecting: boolean = true;
     authorized: boolean = false;
     permissions: "ADMIN" | "PLAYER" | "SPECTATOR";
-    gamePhase: "SPLASHSCREEN" | "QUESTIONSTABLE" | "QUESTION" | "ANSWER" | "ENDGAME";
+    gamePhase: "SPLASHSCREEN" | "QUESTIONSTABLE" | "QUESTION" | "ENDGAME";
     playerName: string = "";
     categories = new Array<ICategory>();
     players = new Array<IPlayer>();
@@ -38,12 +43,14 @@ export class GlobalState {
     questionText: string;
     questionImage: string;
     questionAudio: string;
+    questionVideo: string;
     questionAnswer: string;
     timerStart: number = 0;
     timerEnd: number = 0;
     questionAudioPlaying: boolean = false;
     questionCatTrap: boolean = false;
     fullscreenAnimation = false;
+    answer: IAnswer | null = null;
 }
 
 export const state = new GlobalState();
@@ -66,6 +73,11 @@ document.body.onkeydown = (e) => {
     if(e.code == "KeyT" && e.shiftKey && !e.repeat) {
         sendToServer({
             type: 'testQuestion'
+        });
+    }
+    if(e.code == "KeyN" && e.shiftKey && !e.repeat) {
+        sendToServer({
+            type: 'debug.nextRound'
         });
     }
 }

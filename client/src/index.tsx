@@ -1,5 +1,5 @@
 import './styles.scss';
-import React, { ChangeEvent, SyntheticEvent, useState } from 'react';
+import React, { ChangeEvent, SyntheticEvent, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { ICategory, IPlayer, playerIsLocal, sendToServer, state, tryAuth, uploadAvatar, meathookAudio } from './engine';
 import AudioSvg from './audio.svg';
@@ -64,21 +64,24 @@ function Game() {
         }
     }
 
-    if(state.gamePhase == "SPLASHSCREEN") {
-        gamePhaseComponent = <SplashScreen></SplashScreen>
-    }
-    if(state.gamePhase == "QUESTIONSTABLE") {
-        gamePhaseComponent = <QuestionsTable></QuestionsTable>
-    }
-    if(state.gamePhase == "QUESTION") {
-        gamePhaseComponent = <QuestionBlock></QuestionBlock>
-    }
-    if(state.gamePhase == "ANSWER") {
+    if(state.answer == null) {
+        if(state.gamePhase == "SPLASHSCREEN") {
+            gamePhaseComponent = <SplashScreen></SplashScreen>
+        }
+        if(state.gamePhase == "QUESTIONSTABLE") {
+            gamePhaseComponent = <QuestionsTable></QuestionsTable>
+        }
+        if(state.gamePhase == "QUESTION") {
+            gamePhaseComponent = <QuestionBlock></QuestionBlock>
+        }
+        if(state.gamePhase == "ENDGAME") {
+            gamePhaseComponent = <div></div>
+        }
+    } else {
         gamePhaseComponent = <AnswerBlock></AnswerBlock>
     }
-    if(state.gamePhase == "ENDGAME") {
-        gamePhaseComponent = <div></div>
-    }
+
+    
 
     let localPlayerShouldAnswer = false;
     for(let player of state.players) {
@@ -177,10 +180,66 @@ function QuestionBlock() {
         fontSize = 0.8;
     }
 
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    let element: any = <div></div>
+    if(state.questionImage != null) {
+        element = <img className="questionImage" src={`/file/${state.questionImage}`}></img>
+    } else if(state.questionAudio != null) {
+        element = <img className={`audioSvg ${state.questionAudioPlaying ? 'playing' : ''}`} src={AudioSvg}></img>
+    } else if(state.questionVideo != null) {
+        element = <video src={`/file/${state.questionVideo}`} ref={videoRef}></video>
+    } else {
+        element = state.questionText;
+    }
+
+    useEffect(() => {
+        if(state.questionVideo != null) {
+            videoRef.current.volume = 0.4;
+            videoRef.current.oncanplaythrough = () => {
+                setTimeout(() => videoRef.current.play(), 1000);
+            }
+        }
+    }, []);
+
     return <div className="questionBlock" style={{width: questionsTableWidth + "vw", height: (questionsTableWidth * 0.65) + "vw", fontSize: `${fontSize}vw`}}>
-        { state.questionText }
-        { state.questionImage != null ? <img className="questionImage" src={`/file/${state.questionImage}`}></img> : null }
-        { state.questionAudio != null ? <img className={`audioSvg ${state.questionAudioPlaying ? 'playing' : ''}`} src={AudioSvg}></img> : null }
+        { element }
+    </div>
+}
+
+function AnswerBlock() {
+    let element: any = <div></div>
+
+    const videoRef = useRef<HTMLVideoElement>(null);
+    if(state.answer.video != null) {
+        element = <video src={`/file/${state.answer.video}`} ref={videoRef}></video>
+    } else {
+        element = state.answer.text;
+    }
+
+    useEffect(() => {
+        if(state.answer.video != null) {
+            videoRef.current.volume = 0.4;
+            videoRef.current.oncanplaythrough = () => {
+                setTimeout(() => videoRef.current.play(), 1000);
+            }
+
+            videoRef.current.onended = () => {
+                setTimeout(() => {
+                    state.answer = null;
+                    render();
+                }, 2000);
+            }
+        } else {
+            setTimeout(() => {
+                state.answer = null;
+                render();
+            }, 2000);
+        }
+    }, []);
+
+    return <div className="answerBlock" style={{width: questionsTableWidth + "vw", height: (questionsTableWidth * 0.65) + "vw"}}>
+        { element }
     </div>
 }
 
@@ -192,12 +251,6 @@ function CatTrapBlock() {
 
     return <div className="fullscreen">
         <img src={preloadedMeatHookImg.src} className="meathookAnimation" onAnimationEnd={handleAnimationEnd}></img>
-    </div>
-}
-
-function AnswerBlock() {
-    return <div className="answerBlock" style={{width: questionsTableWidth + "vw", height: (questionsTableWidth * 0.65) + "vw"}}>
-        {state.questionAnswer}
     </div>
 }
 

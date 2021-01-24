@@ -6,6 +6,7 @@ import com.google.gson.JsonObject
 import io.ktor.application.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.http.content.*
+import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
@@ -48,6 +49,7 @@ fun main() {
             }
 
             webSocket("/") {
+                val host = call.request.host()
                 for (frame in incoming) {
                     when(frame) {
                         is Frame.Text -> {
@@ -56,7 +58,7 @@ fun main() {
                                 println(text)
                             }
                             GlobalScope.launch(gameThread) {
-                                processMessage(gson.fromJson(text, JsonObject::class.java), outgoing)
+                                processMessage(gson.fromJson(text, JsonObject::class.java), outgoing, host == "localhost")
                             }
                         }
                     }

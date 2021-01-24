@@ -7,12 +7,21 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 
-fun processMessage(jsonObject: JsonObject, outgoing: SendChannel<Frame>) {
+fun processMessage(jsonObject: JsonObject, outgoing: SendChannel<Frame>, debug: Boolean) {
     val messageType = jsonObject.get("type")?.asString ?: throw error("message without type")
     if(messageType == "auth") {
         val name = jsonObject.get("name").asString
         val key = jsonObject.get("key").asString
-        val permissions = codes[key]
+        val permissions = if(debug && name.startsWith("test.")) {
+            when {
+                name.startsWith("test.admin.") -> PlayerPermissions.ADMIN
+                name.startsWith("test.player.") -> PlayerPermissions.PLAYER
+                name.startsWith("test.spectator.") -> PlayerPermissions.SPECTATOR
+                else -> codes[key]
+            }
+        } else {
+            codes[key]
+        }
         if(game.gamePhase != GamePhase.SPLASHSCREEN &&
             permissions == PlayerPermissions.PLAYER &&
             !game.players.containsKey(name)) {
@@ -97,6 +106,9 @@ fun processMessage(jsonObject: JsonObject, outgoing: SendChannel<Frame>) {
         }
         if(messageType == "selectPlayer") {
             game.selectPlayer(jsonObject["player"].asString)
+        }
+        if(debug && messageType == "debug.nextRound") {
+            game.nextRound()
         }
     }
 }
