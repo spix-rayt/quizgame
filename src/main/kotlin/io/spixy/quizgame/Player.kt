@@ -19,6 +19,7 @@ class Player(val permissions: PlayerPermissions) {
     var answerBlock = false
     var avatar = ""
     var shouldSelectedByAdmin = false
+    var mediaReady = false
 
     fun sendMessage(payload: Map<String, Any?>) {
         GlobalScope.launch(Dispatchers.IO) {

@@ -40,17 +40,18 @@ export class GlobalState {
     categories = new Array<ICategory>();
     players = new Array<IPlayer>();
     playerAvatars = new Map<string, string>();
-    questionText: string;
-    questionImage: string;
-    questionAudio: string;
-    questionVideo: string;
-    questionAnswer: string;
+    questionText: string = "";
+    questionImage: string | null;
+    questionAudio: string | null;
+    questionVideo: string | null;
+    questionAnswer: string = "";
     timerStart: number = 0;
     timerEnd: number = 0;
     questionAudioPlaying: boolean = false;
     questionCatTrap: boolean = false;
     fullscreenAnimation = false;
     answer: IAnswer | null = null;
+    playMedia: () => void = () => {};
 }
 
 export const state = new GlobalState();
@@ -110,6 +111,7 @@ socket.onopen = (e) => {
 
 socket.onmessage = (e) => {
     let message = JSON.parse(e.data);
+    console.log(message);
     if(message.type == "auth") {
         state.connecting = false;
         state.authorized = message.authorized;
@@ -119,21 +121,6 @@ socket.onmessage = (e) => {
     }
     if(message.type == "updateState") {
         delete message.type;
-
-        if(state.questionAudio == null && message.questionAudio != null) {
-            let audio = new Audio(`/file/${message.questionAudio}`);
-            audio.volume = globalVolume;
-            setTimeout(() => {
-                audio.onended = (e) => {
-                    state.questionAudioPlaying = false;
-                    render();
-                }
-                audio.play();
-                state.questionAudioPlaying = true;
-                render();
-            }, 1000);
-        }
-        console.log(state.questionCatTrap == false, message.questionCatTrap == true);
 
         if(state.questionCatTrap == false && message.questionCatTrap == true) {
             meathookAudio.play();
@@ -151,6 +138,9 @@ socket.onmessage = (e) => {
         state.timerStart = performance.now();
         state.timerEnd = performance.now() + message.milliseconds;
         render();
+    }
+    if(message.type == "playMedia") {
+        state.playMedia();
     }
 }
 

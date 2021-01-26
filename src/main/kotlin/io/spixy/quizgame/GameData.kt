@@ -80,14 +80,24 @@ class GameData(val folder: File) {
                 val (parameterName, value) = line.split("=", limit = 2).map { it.trim() }
                 when(parameterName.toLowerCase()) {
                     "ответ" -> currentQuestion?.answer = value
-                    "изображение" -> currentQuestion?.image = File(folder, value)
-                    "аудио" -> currentQuestion?.audio = File(folder, value)
-                    "видео" -> currentQuestion?.video = File(folder, value)
-                    "видео ответ" -> currentQuestion?.videoAnswer = File(folder, value)
+                    "изображение" -> currentQuestion?.image = checkFileAndGet(folder, value)
+                    "аудио" -> currentQuestion?.audio = checkFileAndGet(folder, value)
+                    "видео" -> currentQuestion?.video = checkFileAndGet(folder, value)
+                    "видео ответ" -> currentQuestion?.videoAnswer = checkFileAndGet(folder, value)
                     "кот" -> currentQuestion?.catTrap = value
                     "настоящая цена" -> currentQuestion?.realPrice = value.toInt()
                 }
             }
+        }
+    }
+
+    private fun checkFileAndGet(parent: File, child: String): File? {
+        val result = File(parent, child)
+        if(result.exists()) {
+            return result
+        } else {
+            println("CAUTION: File ${result.path} does not exists")
+            return null
         }
     }
 }

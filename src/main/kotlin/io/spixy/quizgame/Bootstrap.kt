@@ -33,6 +33,8 @@ fun main() {
         println("$v $k")
     }
 
+//    println(GsonBuilder().setPrettyPrinting().create().toJson(game.gameData))
+
     embeddedServer(Netty, 8080) {
         install(WebSockets)
         routing {

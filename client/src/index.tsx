@@ -3,6 +3,7 @@ import React, { ChangeEvent, SyntheticEvent, useEffect, useRef, useState } from 
 import ReactDOM from 'react-dom';
 import { ICategory, IPlayer, playerIsLocal, sendToServer, state, tryAuth, uploadAvatar, meathookAudio } from './engine';
 import AudioSvg from './audio.svg';
+import VideoSvg from './video-camera.svg';
 import CheckMarkSvg from './check-mark.svg';
 import MeatHookImgPath from './meathook.jpg';
 
@@ -104,7 +105,7 @@ function Game() {
         </div>
         { localPlayerShouldAnswer ? <div className="screenLightLeft"></div> : null}
         { localPlayerShouldAnswer ? <div className="screenLightRight"></div> : null}
-        { state.permissions == 'ADMIN' ? <div className="answerField">{state.questionAnswer}</div> : null}
+        { state.permissions == 'ADMIN' ? <div className="adminField"><span>{`${state.questionText}\n`}</span><span>{state.questionAnswer}</span></div> : null}
     </div>
 }
 
@@ -158,7 +159,7 @@ function CategoryRow(prop: {category: ICategory, categoryIndex: number, question
         }
         let handleButtonClick = (e: SyntheticEvent) => {
             sendToServer({
-                type: "questionOpen",
+                type: "questionSelect",
                 category: prop.categoryIndex,
                 question: i
             });
@@ -170,6 +171,11 @@ function CategoryRow(prop: {category: ICategory, categoryIndex: number, question
 }
 
 function QuestionBlock() {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [audioPlaying, setAudioPlaying] = useState(false);
+    const [showVideo, setShowVideo] = useState(false);
+    
     let textWidth = getTextWidth(state.questionText, "1.0vw Futura Condensed");
     let questionsTableWidthInPx = window.innerWidth * questionsTableWidth / 100;
     let fontSize = 4.5 / (textWidth / questionsTableWidthInPx);
@@ -180,24 +186,53 @@ function QuestionBlock() {
         fontSize = 0.8;
     }
 
-    const videoRef = useRef<HTMLVideoElement>(null);
-
     let element: any = <div></div>
     if(state.questionImage != null) {
         element = <img className="questionImage" src={`/file/${state.questionImage}`}></img>
     } else if(state.questionAudio != null) {
-        element = <img className={`audioSvg ${state.questionAudioPlaying ? 'playing' : ''}`} src={AudioSvg}></img>
+        element = [<img className={`audioSvg ${audioPlaying ? 'playing' : ''}`} src={AudioSvg}></img>, <audio src={`/file/${state.questionAudio}`} ref={audioRef}></audio>]
     } else if(state.questionVideo != null) {
-        element = <video src={`/file/${state.questionVideo}`} ref={videoRef}></video>
+        element = [];
+        if(!showVideo) {
+            element.push(<img className="videoSvg" src={VideoSvg}></img>);
+        }
+        element.push(<video className={`${showVideo ? 'videoVisible' : 'videoInvisible'}`} src={`/file/${state.questionVideo}`} ref={videoRef} preload="auto"></video>);
     } else {
         element = state.questionText;
     }
 
     useEffect(() => {
-        if(state.questionVideo != null) {
-            videoRef.current.volume = 0.4;
-            videoRef.current.oncanplaythrough = () => {
-                setTimeout(() => videoRef.current.play(), 1000);
+        state.playMedia = () => {};
+        if(state.questionAudio != null) {
+            let audioElement = audioRef.current;
+            audioElement.oncanplaythrough = () => {
+                state.playMedia = () => {
+                    setTimeout(() => {
+                        audioRef.current.volume = 0.4;
+                        audioRef.current.play();
+                        setAudioPlaying(true);
+                        audioRef.current.onended = () => {
+                            setAudioPlaying(false);
+                        }
+                    }, 1000);
+                }
+                sendToServer({
+                    type: 'mediaReady'
+                });
+            }
+        } else if(state.questionVideo != null) {
+            let videoElement = videoRef.current;
+            videoElement.oncanplaythrough = () => {
+                state.playMedia = () => {
+                    setTimeout(() => {
+                        setShowVideo(true);
+                        videoRef.current.volume = 0.4;
+                        videoRef.current.play();
+                    }, 1000);
+                }
+                sendToServer({
+                    type: 'mediaReady'
+                });
             }
         }
     }, []);
@@ -334,4 +369,7 @@ class Timer extends React.Component {
     }
 }
 
-export let render = () => ReactDOM.render(<App />, document.querySelector('#root'));
+export let render = () => {
+    console.log("render");
+    ReactDOM.render(<App />, document.querySelector('#root'))
+};

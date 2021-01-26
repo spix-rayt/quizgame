@@ -154,6 +154,28 @@ class Game {
             getParticipatingPlayers().filter { it != playerSelectsNextQuestion }.forEach { it.shouldSelectedByAdmin = true }
             updatePlayersForAll()
         }
+        if(currentQuestion.video != null || currentQuestion.audio != null) {
+            GlobalScope.launch(gameThread) {
+                players.values.forEach { it.mediaReady = false }
+                var waiting = true
+                launch(gameThread) {
+                    delay(10000)
+                    waiting = false
+                }
+
+                while (waiting) {
+                    delay(20)
+                    if(players.values.all { it.mediaReady }) {
+                        break
+                    }
+                }
+
+                val playMediaMessage = mapOf(
+                    "type" to "playMedia"
+                )
+                players.values.forEach { it.sendMessage(playMediaMessage) }
+            }
+        }
 
         updateBasicGameStateForAll()
     }

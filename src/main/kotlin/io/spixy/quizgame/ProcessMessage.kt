@@ -54,6 +54,10 @@ fun processMessage(jsonObject: JsonObject, outgoing: SendChannel<Frame>, debug: 
     }
     val player = game.players.values.firstOrNull { it.outgoing == outgoing } ?: return
 
+    if(messageType == "mediaReady") {
+        player.mediaReady = true
+    }
+
     if(player.permissions == PlayerPermissions.SPECTATOR) {
         return
     }
@@ -83,7 +87,7 @@ fun processMessage(jsonObject: JsonObject, outgoing: SendChannel<Frame>, debug: 
         if(messageType == "startGame") {
             game.startGame()
         }
-        if(messageType == "questionOpen") {
+        if(messageType == "questionSelect") {
             game.selectQuestion(
                 jsonObject.get("category").asInt,
                 jsonObject.get("question").asInt
